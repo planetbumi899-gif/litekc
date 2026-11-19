@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simpan Tabung Gaji</title>
+  <!-- Google Fonts & Tailwind CSS & FontAwesome & Chart.js & Canvas Confetti -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
+              500: '#f97316', // Main vibrant orange
+              600: '#ea580c',
+              700: '#c2410c',
+              800: '#9a3412',
+              900: '#7c2d12',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #fffaf5 0%, #fff3e6 100%);
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(251, 146, 60, 0.2);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #fdf2e9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #fdba74;
+      border-radius: 999px;
+    }
+    .badge-tabung {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    }
+  </style>
+</head>
+<body class="text-slate-800 font-sans antialiased pb-16">
+
+  <!-- Header & Navbar -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-orange-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-400 flex items-center justify-center text-white shadow-lg shadow-orange-500/25">
+          <i class="fa-solid fa-piggy-bank text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            Simpan Tabung Gaji
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-orange-100 text-brand-700 border border-orange-200">v1.0 Pro</span>
+          </h1>
+          <p class="text-xs text-slate-500">Kelola & Tabung Penghasilan Gajian dengan Rapi</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="exportDataJSON()" title="Cadangkan Data" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-orange-50 hover:text-brand-600 transition shadow-sm">
+          <i class="fa-solid fa-file-export text-brand-500"></i> Ekspor JSON
+        </button>
+        <label title="Pulihkan Data" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-orange-50 hover:text-brand-600 transition shadow-sm cursor-pointer">
+          <i class="fa-solid fa-file-import text-brand-500"></i> Impor
+          <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importDataJSON(event)">
+        </label>
+        <button onclick="openModalForm()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl text-white badge-tabung hover:brightness-105 active:scale-95 transition shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-plus"></i> Catat Gaji Baru
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+    <!-- Overview Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Card 1: Total Gaji Diterima -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm border-l-4 border-l-brand-500 relative overflow-hidden group hover:shadow-md transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Gaji Masuk</span>
+          <div class="w-9 h-9 rounded-xl bg-orange-100 text-brand-600 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <div class="text-2xl font-black text-slate-900" id="statTotalGaji">Rp 0</div>
+          <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <span class="text-emerald-600 font-semibold" id="statCountEntries">0 catatan</span> gaji tercatat
+          </p>
+        </div>
+        <div class="absolute -right-4 -bottom-4 text-orange-200/40 text-7xl font-bold pointer-events-none select-none">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+      </div>
+
+      <!-- Card 2: Total Ditabung -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm border-l-4 border-l-emerald-500 relative overflow-hidden group hover:shadow-md transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Ditabung</span>
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-vault"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <div class="text-2xl font-black text-emerald-600" id="statTotalTabungan">Rp 0</div>
+          <p class="text-xs text-slate-500 mt-1">
+            <span class="font-semibold text-emerald-600" id="statPersenTabungan">0%</span> dari total penerimaan gaji
+          </p>
+        </div>
+        <div class="absolute -right-4 -bottom-4 text-emerald-100/50 text-7xl font-bold pointer-events-none select-none">
+          <i class="fa-solid fa-piggy-bank"></i>
+        </div>
+      </div>
+
+      <!-- Card 3: Total Pengeluaran / Sisa Operasional -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm border-l-4 border-l-amber-500 relative overflow-hidden group hover:shadow-md transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Alokasi Kebutuhan</span>
+          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-cart-shopping"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <div class="text-2xl font-black text-amber-700" id="statTotalKebutuhan">Rp 0</div>
+          <p class="text-xs text-slate-500 mt-1">
+            Sisa untuk kebutuhan hidup harian
+          </p>
+        </div>
+        <div class="absolute -right-4 -bottom-4 text-amber-100/50 text-7xl font-bold pointer-events-none select-none">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+      </div>
+
+      <!-- Card 4: Anggota / Karyawan Aktif -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm border-l-4 border-l-blue-500 relative overflow-hidden group hover:shadow-md transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Daftar Penerima</span>
+          <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-users"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <div class="text-2xl font-black text-slate-900" id="statTotalAnggota">0 Orang</div>
+          <p class="text-xs text-slate-500 mt-1" id="statTopEarner">
+            Belum ada data penerima
+          </p>
+        </div>
+        <div class="absolute -right-4 -bottom-4 text-blue-100/50 text-7xl font-bold pointer-events-none select-none">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action / Interactive Calculator Bar -->
+    <div class="bg-gradient-to-r from-orange-500 via-brand-500 to-amber-500 rounded-2xl p-5 text-white shadow-lg shadow-orange-500/20 relative overflow-hidden">
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider">Fitur Pintar Alokasi</span>
+            <span class="text-xs text-orange-100">Rekomendasi Metode 50/30/20 atau Atur Bebas</span>
+          </div>
+          <h2 class="text-lg md:text-xl font-bold mt-1">Kalkulator Simulasi Tabungan Gaji Cepat</h2>
+          <p class="text-xs md:text-sm text-orange-50 max-w-xl">
+            Hitung langsung berapa rupiah yang harus Anda tabung dari gaji bulan ini sebelum mencatatnya.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="openModalForm()" class="px-4 py-2.5 bg-white text-brand-600 hover:bg-orange-50 font-bold text-sm rounded-xl transition shadow active:scale-95 flex items-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-feather-pointed"></i> Input Gaji Sekarang
+          </button>
+        </div>
+      </div>
+      <div class="absolute right-0 top-0 w-80 h-full bg-white/5 skew-x-12 pointer-events-none"></div>
+    </div>
+
+    <!-- Charts & Analytics Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Chart Tren Gajian & Tabungan -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm lg:col-span-2 flex flex-col justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-brand-500"></i> Tren Riwayat Gaji & Tabungan Bulanan
+            </h3>
+            <p class="text-xs text-slate-500">Perbandingan perolehan gaji dan nilai uang yang berhasil ditabung</p>
+          </div>
+          <div class="text-xs font-semibold px-2.5 py-1 bg-orange-50 text-brand-600 rounded-lg border border-orange-200">
+            Perkembangan Keuangan
+          </div>
+        </div>
+        <div class="h-64 sm:h-72 w-full relative">
+          <canvas id="salaryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Komposisi Tabungan vs Pengeluaran -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+        <div class="mb-2">
+          <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-brand-500"></i> Rasio Tabungan
+          </h3>
+          <p class="text-xs text-slate-500">Porsi tabungan vs kebutuhan</p>
+        </div>
+        <div class="h-52 w-full flex items-center justify-center relative">
+          <canvas id="donutChart"></canvas>
+        </div>
+        <div class="mt-4 pt-3 border-t border-orange-100 flex justify-around text-center text-xs">
+          <div>
+            <span class="block text-slate-400">Total Tabungan</span>
+            <span class="font-bold text-emerald-600 text-sm" id="donutLabelTabungan">Rp 0</span>
+          </div>
+          <div class="w-px bg-slate-200"></div>
+          <div>
+            <span class="block text-slate-400">Kebutuhan Hidup</span>
+            <span class="font-bold text-amber-600 text-sm" id="donutLabelKebutuhan">Rp 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter & Search & Table Section -->
+    <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-orange-100">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-brand-500"></i> Riwayat Simpan Tabung Gaji
+          </h3>
+          <p class="text-xs text-slate-500">Kelola dan pantau semua riwayat penerimaan serta tabungan gaji</p>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Filter Search -->
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+            <input type="text" id="searchKeyword" oninput="renderTable()" placeholder="Cari nama / catatan..." class="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-400 focus:bg-white w-44 sm:w-56 transition">
+          </div>
+
+          <!-- Filter Tahun/Bulan -->
+          <input type="month" id="filterBulan" onchange="renderTable()" class="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-400 transition text-slate-700">
+
+          <!-- Reset Filter -->
+          <button onclick="resetFilter()" title="Reset Filter" class="px-2.5 py-1.5 text-xs text-slate-500 hover:text-brand-600 border border-slate-200 rounded-xl bg-white hover:bg-orange-50 transition">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Records Table -->
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse min-w-[700px]">
+          <thead>
+            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-orange-50/70 rounded-lg">
+              <th class="py-3 px-4 rounded-l-xl">Bulan Gajian</th>
+              <th class="py-3 px-4">Nama Penerima</th>
+              <th class="py-3 px-4 text-right">Nominal Gaji</th>
+              <th class="py-3 px-4 text-right">Tabungan Disimpan</th>
+              <th class="py-3 px-4 text-right">Sisa Kebutuhan</th>
+              <th class="py-3 px-4 text-center">Status Alokasi</th>
+              <th class="py-3 px-4 text-center rounded-r-xl">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="salaryTableBody" class="divide-y divide-orange-100/60 text-xs">
+            <!-- Dynamic rows will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden py-12 text-center">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-orange-100 text-brand-500 flex items-center justify-center text-2xl">
+          <i class="fa-regular fa-folder-open"></i>
+        </div>
+        <h4 class="font-bold text-slate-700 text-sm">Belum Ada Data Catatan Gaji</h4>
+        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Mulai catat gaji Anda sekarang untuk melihat simulasi tabungan dan grafik perkembangan uang Anda!</p>
+        <button onclick="openModalForm()" class="mt-4 px-4 py-2 text-xs font-bold rounded-xl text-white badge-tabung shadow hover:brightness-105 transition">
+          <i class="fa-solid fa-plus mr-1"></i> Tambah Catatan Pertama
+        </button>
+      </div>
+
+      <!-- Summary footer in table card -->
+      <div id="tableSummaryFooter" class="pt-3 border-t border-orange-100 flex flex-wrap items-center justify-between text-xs text-slate-500">
+        <div id="tableInfoText">Menampilkan 0 data</div>
+        <div class="flex items-center gap-4">
+          <span>Total Terpilih Gaji: <strong class="text-brand-600" id="tableFilteredTotalGaji">Rp 0</strong></span>
+          <span>Tabungan: <strong class="text-emerald-600" id="tableFilteredTotalTabung">Rp 0</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips Keuangan & Manajemen Gaji -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white rounded-2xl p-4 border border-orange-100 shadow-sm flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-orange-100 text-brand-600 flex items-center justify-center flex-shrink-0 text-lg">
+          <i class="fa-solid fa-lightbulb"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-slate-800">Prinsip Pay Yourself First</h4>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">
+            Sisihkan tabungan di awal begitu gaji mendarat di rekening, bukan dari sisa di akhir bulan.
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-orange-100 shadow-sm flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 text-lg">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-slate-800">Dana Darurat 3-6 Bulan</h4>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">
+            Prioritaskan hasil tabungan gaji untuk membentuk dana darurat minimal 3 sampai 6 kali pengeluaran bulanan.
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-orange-100 shadow-sm flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 text-lg">
+          <i class="fa-solid fa-bullseye"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-slate-800">Aturan Emas 50 / 30 / 20</h4>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">
+            50% Kebutuhan pokok, 30% Keinginan santai, dan minimal 20% langsung dialokasikan ke pos Tabungan/Investasi.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal Input / Edit Gaji -->
+  <div id="salaryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-orange-100 overflow-hidden transform transition-all">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-brand-500 to-amber-500 px-6 py-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+            <i class="fa-solid fa-hand-holding-dollar text-lg"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base" id="modalTitle">Input Simpan Tabung Gaji</h3>
+            <p class="text-xs text-orange-100">Catat penerimaan gaji & atur tabungan Anda</p>
+          </div>
+        </div>
+        <button onclick="closeModalForm()" class="text-white/80 hover:text-white text-lg p-1.5 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="salaryForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="entryId">
+
+        <!-- Input Nama -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+            <i class="fa-solid fa-user text-brand-500 mr-1"></i> Nama Penerima Gaji *
+          </label>
+          <input type="text" id="inputNama" required placeholder="Contoh: Budi Santoso / Saya" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+        </div>
+
+        <!-- Input Bulan Gajian -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+            <i class="fa-solid fa-calendar-day text-brand-500 mr-1"></i> Bulan Gajian *
+          </label>
+          <input type="month" id="inputBulan" required class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+        </div>
+
+        <!-- Input Nominal Gaji -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+            <i class="fa-solid fa-money-bill-wave text-brand-500 mr-1"></i> Jumlah Gaji Diterima (Rp) *
+          </label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold text-sm">Rp</span>
+            <input type="text" id="inputGaji" required oninput="formatRupiahInput(this); calculateAllocationPreview();" placeholder="0" class="w-full pl-11 pr-3.5 py-2.5 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+          </div>
+        </div>
+
+        <!-- Pengaturan Tabungan (Persen atau Nominal Langsung) -->
+        <div class="bg-orange-50/80 p-3.5 rounded-2xl border border-orange-200/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-brand-800 uppercase tracking-wide flex items-center gap-1">
+              <i class="fa-solid fa-piggy-bank text-brand-600"></i> Alokasi Tabungan
+            </label>
+            <div class="flex items-center gap-1.5 bg-white p-0.5 rounded-lg border border-orange-200 text-[11px] font-semibold text-slate-600">
+              <button type="button" onclick="setAllocationMode('percent')" id="btnModePercent" class="px-2 py-0.5 rounded bg-brand-500 text-white transition">Persen (%)</button>
+              <button type="button" onclick="setAllocationMode('nominal')" id="btnModeNominal" class="px-2 py-0.5 rounded text-slate-600 hover:text-brand-600 transition">Rupiah (Rp)</button>
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div id="presetButtonsGroup" class="flex items-center gap-2">
+            <span class="text-[11px] text-slate-500 font-medium">Preset Cepat:</span>
+            <button type="button" onclick="applyPresetPercent(10)" class="px-2 py-1 bg-white hover:bg-orange-100 text-brand-700 border border-orange-200 text-xs font-bold rounded-lg transition">10%</button>
+            <button type="button" onclick="applyPresetPercent(20)" class="px-2 py-1 bg-white hover:bg-orange-100 text-brand-700 border border-orange-200 text-xs font-bold rounded-lg transition active:bg-orange-200">20% (Ideal)</button>
+            <button type="button" onclick="applyPresetPercent(30)" class="px-2 py-1 bg-white hover:bg-orange-100 text-brand-700 border border-orange-200 text-xs font-bold rounded-lg transition">30%</button>
+            <button type="button" onclick="applyPresetPercent(50)" class="px-2 py-1 bg-white hover:bg-orange-100 text-brand-700 border border-orange-200 text-xs font-bold rounded-lg transition">50%</button>
+          </div>
+
+          <!-- Input Controls for Tabungan -->
+          <div id="containerInputPercent" class="flex items-center gap-3">
+            <input type="range" id="inputPercentRange" min="0" max="90" step="1" value="20" oninput="syncPercentFromRange(this.value)" class="w-full accent-brand-500">
+            <div class="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-orange-200 font-bold text-sm text-brand-600 w-20 justify-center">
+              <input type="number" id="inputPercentVal" min="0" max="100" value="20" oninput="syncPercentFromVal(this.value)" class="w-10 text-right focus:outline-none">
+              <span>%</span>
+            </div>
+          </div>
+
+          <div id="containerInputNominal" class="hidden">
+            <div class="relative">
+              <span class="absolute left-3.5 top-2 text-slate-400 font-bold text-xs">Rp</span>
+              <input type="text" id="inputNominalTabungan" oninput="formatRupiahInput(this); calculateAllocationPreview();" placeholder="0" class="w-full pl-9 pr-3 py-1.5 text-xs font-semibold bg-white border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+          </div>
+
+          <!-- Live Preview Alokasi -->
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-orange-200/60 text-xs">
+            <div class="bg-white p-2.5 rounded-xl border border-orange-100">
+              <span class="text-slate-500 block text-[11px]">Uang Ditabung:</span>
+              <span class="font-extrabold text-emerald-600 text-sm" id="previewTabungan">Rp 0</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-orange-100">
+              <span class="text-slate-500 block text-[11px]">Sisa Untuk Kebutuhan:</span>
+              <span class="font-extrabold text-amber-700 text-sm" id="previewKebutuhan">Rp 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Catatan Tambahan (Opsional) -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+            <i class="fa-solid fa-note-sticky text-brand-500 mr-1"></i> Catatan / Pos Tabungan (Opsional)
+          </label>
+          <input type="text" id="inputCatatan" placeholder="Contoh: Tabungan Nikah / Dana Darurat Bank BCA" class="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModalForm()" class="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2.5 text-xs font-bold text-white badge-tabung rounded-xl hover:brightness-105 active:scale-95 transition shadow-md shadow-brand-500/25 flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Tabungan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail / Struk Gajian Modal -->
+  <div id="receiptModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-orange-100 overflow-hidden transform transition-all">
+      <div class="bg-brand-500 px-6 py-4 text-white flex items-center justify-between">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          <i class="fa-solid fa-receipt"></i> Bukti Tabung Gaji
+        </h3>
+        <button onclick="closeReceiptModal()" class="text-white/80 hover:text-white p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="receiptContent" class="p-6 space-y-4 text-xs">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+        <button onclick="window.print()" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-orange-50 font-semibold text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-print"></i> Cetak Struk
+        </button>
+        <button onclick="closeReceiptModal()" class="px-4 py-1.5 bg-brand-500 text-white rounded-lg font-semibold text-xs hover:bg-brand-600">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 transform translate-y-24 opacity-0 transition-all duration-300">
+    <i class="fa-solid fa-circle-check text-brand-400 text-base" id="toastIcon"></i>
+    <span id="toastMsg">Data berhasil disimpan!</span>
+  </div>
+
+  <!-- Application Logic Scripts -->
+  <script>
+    // State Data Storage
+    const STORAGE_KEY = 'SIMPAN_TABUNG_GAJI_DATA';
+    let salaryEntries = [];
+    let allocationMode = 'percent'; // 'percent' or 'nominal'
+    let salaryChartInstance = null;
+    let donutChartInstance = null;
+
+    // Indonesian Month Names
+    const bulanIndo = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    // Helper: Format Rupiah
+    function formatRupiah(number) {
+      if (isNaN(number) || number === null || number === undefined) return 'Rp 0';
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+      }).format(number);
+    }
+
+    // Parse String Rupiah back to Integer
+    function parseRupiah(str) {
+      if (!str) return 0;
+      const clean = str.toString().replace(/[^0-9]/g, '');
+      return parseInt(clean, 10) || 0;
+    }
+
+    // Input Currency Formatter
+    function formatRupiahInput(input) {
+      let val = parseRupiah(input.value);
+      input.value = val === 0 ? '' : new Intl.NumberFormat('id-ID').format(val);
+    }
+
+    // Format YYYY-MM to readable Indonesian string
+    function formatMonthYear(monthStr) {
+      if (!monthStr) return '-';
+      const [year, month] = monthStr.split('-');
+      const monthIdx = parseInt(month, 10) - 1;
+      return `${bulanIndo[monthIdx] || month} ${year}`;
+    }
+
+    // Initialize Application
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      setDefaultMonthInput();
+      renderStats();
+      renderCharts();
+      renderTable();
+    });
+
+    // Default current month on date input
+    function setDefaultMonthInput() {
+      const now = new Date();
+      const yr = now.getFullYear();
+      const mo = String(now.getMonth() + 1).padStart(2, '0');
+      document.getElementById('inputBulan').value = `${yr}-${mo}`;
+    }
+
+    // Load from LocalStorage or seed sample data for immediate beauty
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          salaryEntries = JSON.parse(saved);
+        } catch (e) {
+          salaryEntries = [];
+        }
+      } else {
+        // Sample initial data so user sees awesome UI right away
+        salaryEntries = [
+          {
+            id: 'demo-1',
+            nama: 'Fero Pratama',
+            bulan: '2026-08',
+            gaji: 7500000,
+            persenTabungan: 20,
+            tabungan: 1500000,
+            kebutuhan: 6000000,
+            catatan: 'Tabungan Dana Darurat Mandiri',
+            createdAt: new Date('2026-08-25').toISOString()
+          },
+          {
+            id: 'demo-2',
+            nama: 'Fero Pratama',
+            bulan: '2026-09',
+            gaji: 8000000,
+            persenTabungan: 25,
+            tabungan: 2000000,
+            kebutuhan: 6000000,
+            catatan: 'Bonus proyek & Tabung Investasi Reksadana',
+            createdAt: new Date('2026-09-25').toISOString()
+          },
+          {
+            id: 'demo-3',
+            nama: 'Fero Pratama',
+            bulan: '2026-10',
+            gaji: 8000000,
+            persenTabungan: 30,
+            tabungan: 2400000,
+            kebutuhan: 5600000,
+            catatan: 'Target Tabungan Kurban & Liburan',
+            createdAt: new Date('2026-10-25').toISOString()
+          }
+        ];
+        saveData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(salaryEntries));
+    }
+
+    // Mode Toggle: Percent vs Nominal
+    function setAllocationMode(mode) {
+      allocationMode = mode;
+      const btnPercent = document.getElementById('btnModePercent');
+      const btnNominal = document.getElementById('btnModeNominal');
+      const containerPercent = document.getElementById('containerInputPercent');
+      const containerNominal = document.getElementById('containerInputNominal');
+      const presetGroup = document.getElementById('presetButtonsGroup');
+
+      if (mode === 'percent') {
+        btnPercent.className = 'px-2 py-0.5 rounded bg-brand-500 text-white transition';
+        btnNominal.className = 'px-2 py-0.5 rounded text-slate-600 hover:text-brand-600 transition';
+        containerPercent.classList.remove('hidden');
+        containerNominal.classList.add('hidden');
+        presetGroup.classList.remove('hidden');
+      } else {
+        btnNominal.className = 'px-2 py-0.5 rounded bg-brand-500 text-white transition';
+        btnPercent.className = 'px-2 py-0.5 rounded text-slate-600 hover:text-brand-600 transition';
+        containerPercent.classList.add('hidden');
+        containerNominal.classList.remove('hidden');
+        presetGroup.classList.add('hidden');
+      }
+      calculateAllocationPreview();
+    }
+
+    function applyPresetPercent(p) {
+      syncPercentFromVal(p);
+    }
+
+    function syncPercentFromRange(val) {
+      document.getElementById('inputPercentVal').value = val;
+      calculateAllocationPreview();
+    }
+
+    function syncPercentFromVal(val) {
+      let num = Math.min(100, Math.max(0, parseInt(val, 10) || 0));
+      document.getElementById('inputPercentVal').value = num;
+      document.getElementById('inputPercentRange').value = num;
+      calculateAllocationPreview();
+    }
+
+    // Calculate dynamic preview of savings & needs
+    function calculateAllocationPreview() {
+      const gaji = parseRupiah(document.getElementById('inputGaji').value);
+      let tabungan = 0;
+      let sisaKebutuhan = 0;
+
+      if (allocationMode === 'percent') {
+        const percent = parseInt(document.getElementById('inputPercentVal').value, 10) || 0;
+        tabungan = Math.round((gaji * percent) / 100);
+      } else {
+        tabungan = parseRupiah(document.getElementById('inputNominalTabungan').value);
+        if (tabungan > gaji) {
+          tabungan = gaji;
+          document.getElementById('inputNominalTabungan').value = new Intl.NumberFormat('id-ID').format(gaji);
+        }
+      }
+
+      sisaKebutuhan = Math.max(0, gaji - tabungan);
+
+      document.getElementById('previewTabungan').innerText = formatRupiah(tabungan);
+      document.getElementById('previewKebutuhan').innerText = formatRupiah(sisaKebutuhan);
+    }
+
+    // Modal Form Open & Close
+    function openModalForm(editId = null) {
+      const modal = document.getElementById('salaryModal');
+      const form = document.getElementById('salaryForm');
+      form.reset();
+
+      if (editId) {
+        const item = salaryEntries.find(x => x.id === editId);
+        if (item) {
+          document.getElementById('modalTitle').innerText = 'Edit Simpan Tabung Gaji';
+          document.getElementById('entryId').value = item.id;
+          document.getElementById('inputNama').value = item.nama;
+          document.getElementById('inputBulan').value = item.bulan;
+          document.getElementById('inputGaji').value = new Intl.NumberFormat('id-ID').format(item.gaji);
+          document.getElementById('inputCatatan').value = item.catatan || '';
+          
+          setAllocationMode('percent');
+          syncPercentFromVal(item.persenTabungan || 20);
+        }
+      } else {
+        document.getElementById('modalTitle').innerText = 'Input Simpan Tabung Gaji';
+        document.getElementById('entryId').value = '';
+        setDefaultMonthInput();
+        setAllocationMode('percent');
+        syncPercentFromVal(20);
+      }
+
+      calculateAllocationPreview();
+      modal.classList.remove('hidden');
+    }
+
+    function closeModalForm() {
+      document.getElementById('salaryModal').classList.add('hidden');
+    }
+
+    // Handle Form Submit
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const id = document.getElementById('entryId').value;
+      const nama = document.getElementById('inputNama').value.trim();
+      const bulan = document.getElementById('inputBulan').value;
+      const gaji = parseRupiah(document.getElementById('inputGaji').value);
+      const catatan = document.getElementById('inputCatatan').value.trim();
+
+      if (!nama || !bulan || gaji <= 0) {
+        showToast('Harap isi nama, bulan, dan nominal gaji dengan benar!', 'error');
+        return;
+      }
+
+      let tabungan = 0;
+      let persenTabungan = 0;
+
+      if (allocationMode === 'percent') {
+        persenTabungan = parseInt(document.getElementById('inputPercentVal').value, 10) || 0;
+        tabungan = Math.round((gaji * persenTabungan) / 100);
+      } else {
+        tabungan = parseRupiah(document.getElementById('inputNominalTabungan').value);
+        if (tabungan > gaji) tabungan = gaji;
+        persenTabungan = gaji > 0 ? Math.round((tabungan / gaji) * 100) : 0;
+      }
+
+      const kebutuhan = Math.max(0, gaji - tabungan);
+
+      if (id) {
+        // Edit existing
+        const index = salaryEntries.findIndex(x => x.id === id);
+        if (index !== -1) {
+          salaryEntries[index] = {
+            ...salaryEntries[index],
+            nama,
+            bulan,
+            gaji,
+            tabungan,
+            persenTabungan,
+            kebutuhan,
+            catatan,
+            updatedAt: new Date().toISOString()
+          };
+          showToast(`Berhasil memperbarui tabungan gaji untuk ${nama}!`);
+        }
+      } else {
+        // Create new
+        const newRecord = {
+          id: 'gaji_' + Date.now(),
+          nama,
+          bulan,
+          gaji,
+          tabungan,
+          persenTabungan,
+          kebutuhan,
+          catatan,
+          createdAt: new Date().toISOString()
+        };
+        salaryEntries.unshift(newRecord);
+        showToast(`Alhamdulillah! Gaji ${formatRupiah(gaji)} & tabungan ${formatRupiah(tabungan)} berhasil dicatat!`);
+
+        // Trigger confetti celebration
+        triggerCelebration();
+      }
+
+      saveData();
+      closeModalForm();
+      renderStats();
+      renderCharts();
+      renderTable();
+    }
+
+    // Trigger Festive Confetti for Saving milestone
+    function triggerCelebration() {
+      try {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.7 },
+          colors: ['#f97316', '#fb923c', '#fdba74', '#10b981', '#f59e0b']
+        });
+      } catch(e) {}
+    }
+
+    // Delete Record
+    function deleteRecord(id) {
+      const item = salaryEntries.find(x => x.id === id);
+      const nama = item ? item.nama : 'catatan ini';
+      if (confirm(`Apakah Anda yakin ingin menghapus data tabungan gaji ${nama}?`)) {
+        salaryEntries = salaryEntries.filter(x => x.id !== id);
+        saveData();
+        renderStats();
+        renderCharts();
+        renderTable();
+        showToast('Data berhasil dihapus.');
+      }
+    }
+
+    // View Details / Receipt
+    function viewReceipt(id) {
+      const item = salaryEntries.find(x => x.id === id);
+      if (!item) return;
+
+      const container = document.getElementById('receiptContent');
+      container.innerHTML = `
+        <div class="text-center pb-3 border-b border-dashed border-orange-200">
+          <div class="w-12 h-12 rounded-2xl bg-orange-100 text-brand-600 mx-auto flex items-center justify-center text-xl mb-2">
+            <i class="fa-solid fa-piggy-bank"></i>
+          </div>
+          <h4 class="font-extrabold text-base text-slate-800">Simpan Tabung Gaji</h4>
+          <p class="text-slate-400 text-[11px]">Slip Alokasi Pengelolaan Gaji & Tabungan</p>
+        </div>
+
+        <div class="space-y-2 py-2">
+          <div class="flex justify-between">
+            <span class="text-slate-500">Nama Penerima:</span>
+            <span class="font-bold text-slate-800">${item.nama}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Bulan Gajian:</span>
+            <span class="font-bold text-brand-600">${formatMonthYear(item.bulan)}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Tanggal Dicatat:</span>
+            <span class="text-slate-700">${new Date(item.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' })}</span>
+          </div>
+        </div>
+
+        <div class="bg-orange-50/70 p-3.5 rounded-xl border border-orange-200/60 space-y-2">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-700 font-semibold">Total Gaji Masuk:</span>
+            <span class="font-black text-slate-900">${formatRupiah(item.gaji)}</span>
+          </div>
+          <div class="flex justify-between items-center text-emerald-700 font-semibold">
+            <span>Uang Ditabung (${item.persenTabungan}%):</span>
+            <span class="font-bold">+ ${formatRupiah(item.tabungan)}</span>
+          </div>
+          <div class="flex justify-between items-center text-amber-800 font-medium">
+            <span>Sisa Biaya Hidup:</span>
+            <span class="font-semibold">${formatRupiah(item.kebutuhan)}</span>
+          </div>
+        </div>
+
+        ${item.catatan ? `
+          <div class="p-2.5 bg-slate-50 rounded-xl text-slate-600 border border-slate-200">
+            <span class="font-bold block text-[11px] text-slate-400">Catatan Khusus:</span>
+            <p class="italic text-xs mt-0.5">"${item.catatan}"</p>
+          </div>
+        ` : ''}
+
+        <div class="pt-2 text-center text-slate-400 text-[11px] italic">
+          "Menabung gaji hari ini adalah ketenangan finansial esok hari."
+        </div>
+      `;
+
+      document.getElementById('receiptModal').classList.remove('hidden');
+    }
+
+    function closeReceiptModal() {
+      document.getElementById('receiptModal').classList.add('hidden');
+    }
+
+    // Render Stats
+    function renderStats() {
+      const totalGaji = salaryEntries.reduce((acc, curr) => acc + (curr.gaji || 0), 0);
+      const totalTabungan = salaryEntries.reduce((acc, curr) => acc + (curr.tabungan || 0), 0);
+      const totalKebutuhan = salaryEntries.reduce((acc, curr) => acc + (curr.kebutuhan || 0), 0);
+
+      document.getElementById('statTotalGaji').innerText = formatRupiah(totalGaji);
+      document.getElementById('statCountEntries').innerText = salaryEntries.length;
+      document.getElementById('statTotalTabungan').innerText = formatRupiah(totalTabungan);
+
+      const persen = totalGaji > 0 ? Math.round((totalTabungan / totalGaji) * 100) : 0;
+      document.getElementById('statPersenTabungan').innerText = `${persen}%`;
+
+      document.getElementById('statTotalKebutuhan').innerText = formatRupiah(totalKebutuhan);
+
+      // Anggota Unique
+      const names = [...new Set(salaryEntries.map(x => x.nama))];
+      document.getElementById('statTotalAnggota').innerText = `${names.length} Orang`;
+      if (names.length > 0) {
+        document.getElementById('statTopEarner').innerText = `Terdaftar: ${names.slice(0, 2).join(', ')}${names.length > 2 ? '...' : ''}`;
+      } else {
+        document.getElementById('statTopEarner').innerText = 'Belum ada data';
+      }
+
+      // Donut label
+      document.getElementById('donutLabelTabungan').innerText = formatRupiah(totalTabungan);
+      document.getElementById('donutLabelKebutuhan').innerText = formatRupiah(totalKebutuhan);
+    }
+
+    // Render Charts
+    function renderCharts() {
+      // Group by Month sorted chronologically
+      const monthGroups = {};
+      salaryEntries.forEach(item => {
+        if (!monthGroups[item.bulan]) {
+          monthGroups[item.bulan] = { gaji: 0, tabungan: 0 };
+        }
+        monthGroups[item.bulan].gaji += item.gaji;
+        monthGroups[item.bulan].tabungan += item.tabungan;
+      });
+
+      const sortedMonths = Object.keys(monthGroups).sort();
+      const labels = sortedMonths.map(m => formatMonthYear(m));
+      const dataGaji = sortedMonths.map(m => monthGroups[m].gaji);
+      const dataTabungan = sortedMonths.map(m => monthGroups[m].tabungan);
+
+      // 1. Line / Bar Trend Chart
+      const ctxLine = document.getElementById('salaryChart').getContext('2d');
+      if (salaryChartInstance) {
+        salaryChartInstance.destroy();
+      }
+
+      salaryChartInstance = new Chart(ctxLine, {
+        type: 'bar',
+        data: {
+          labels: labels.length ? labels : ['Belum Ada Data'],
+          datasets: [
+            {
+              label: 'Total Gaji Diterima',
+              data: dataGaji.length ? dataGaji : [0],
+              backgroundColor: 'rgba(249, 115, 22, 0.35)',
+              borderColor: '#f97316',
+              borderWidth: 2,
+              borderRadius: 8,
+              borderSkipped: false
+            },
+            {
+              label: 'Total Disimpan / Ditabung',
+              data: dataTabungan.length ? dataTabungan : [0],
+              backgroundColor: 'rgba(16, 185, 129, 0.85)',
+              borderColor: '#059669',
+              borderWidth: 2,
+              borderRadius: 8,
+              borderSkipped: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                boxWidth: 12,
+                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ${formatRupiah(context.parsed.y)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                font: { family: 'Plus Jakarta Sans', size: 10 },
+                callback: function(value) {
+                  if (value >= 1000000) return (value / 1000000) + ' Jt';
+                  return value;
+                }
+              },
+              grid: {
+                color: '#fed7aa40'
+              }
+            },
+            x: {
+              ticks: {
+                font: { family: 'Plus Jakarta Sans', size: 11 }
+              },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      // 2. Donut Chart for Savings Ratio
+      const totalTabungan = salaryEntries.reduce((a, b) => a + (b.tabungan || 0), 0);
+      const totalKebutuhan = salaryEntries.reduce((a, b) => a + (b.kebutuhan || 0), 0);
+
+      const ctxDonut = document.getElementById('donutChart').getContext('2d');
+      if (donutChartInstance) {
+        donutChartInstance.destroy();
+      }
+
+      const hasData = (totalTabungan + totalKebutuhan) > 0;
+      donutChartInstance = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Uang Ditabung', 'Kebutuhan Hidup'],
+          datasets: [{
+            data: hasData ? [totalTabungan, totalKebutuhan] : [1, 1],
+            backgroundColor: hasData ? ['#10b981', '#f59e0b'] : ['#e2e8f0', '#cbd5e1'],
+            borderWidth: 3,
+            borderColor: '#ffffff',
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 12,
+                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  if (!hasData) return ' Belum ada data';
+                  return ` ${context.label}: ${formatRupiah(context.parsed)}`;
+                }
+              }
+            }
+          },
+          cutout: '68%'
+        }
+      });
+    }
+
+    // Render Table with Filtering & Searching
+    function renderTable() {
+      const keyword = (document.getElementById('searchKeyword').value || '').toLowerCase().trim();
+      const filterBulan = document.getElementById('filterBulan').value;
+      const tbody = document.getElementById('salaryTableBody');
+      const emptyState = document.getElementById('emptyState');
+      const summaryFooter = document.getElementById('tableSummaryFooter');
+
+      let filtered = salaryEntries.filter(item => {
+        const matchKeyword = item.nama.toLowerCase().includes(keyword) || 
+                             (item.catatan && item.catatan.toLowerCase().includes(keyword));
+        const matchMonth = !filterBulan || item.bulan === filterBulan;
+        return matchKeyword && matchMonth;
+      });
+
+      // Sort by bulan descending
+      filtered.sort((a, b) => b.bulan.localeCompare(a.bulan));
+
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        summaryFooter.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      summaryFooter.classList.remove('hidden');
+
+      let filteredGaji = 0;
+      let filteredTabung = 0;
+
+      filtered.forEach(item => {
+        filteredGaji += item.gaji;
+        filteredTabung += item.tabungan;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-orange-50/50 transition border-b border-orange-100/50';
+
+        // Badge tabungan persentase style
+        let badgeColor = 'bg-orange-100 text-brand-700 border-orange-200';
+        if (item.persenTabungan >= 30) badgeColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        else if (item.persenTabungan >= 20) badgeColor = 'bg-teal-100 text-teal-700 border-teal-200';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+              ${formatMonthYear(item.bulan)}
+            </div>
+          </td>
+          <td class="py-3 px-4 font-semibold text-slate-900">
+            <div>${item.nama}</div>
+            ${item.catatan ? `<div class="text-[11px] text-slate-400 font-normal truncate max-w-xs">${item.catatan}</div>` : ''}
+          </td>
+          <td class="py-3 px-4 text-right font-black text-slate-900 whitespace-nowrap">
+            ${formatRupiah(item.gaji)}
+          </td>
+          <td class="py-3 px-4 text-right font-extrabold text-emerald-600 whitespace-nowrap">
+            + ${formatRupiah(item.tabungan)}
+          </td>
+          <td class="py-3 px-4 text-right font-semibold text-amber-700 whitespace-nowrap">
+            ${formatRupiah(item.kebutuhan)}
+          </td>
+          <td class="py-3 px-4 text-center whitespace-nowrap">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badgeColor}">
+              <i class="fa-solid fa-piggy-bank text-[10px]"></i> ${item.persenTabungan}% Ditabung
+            </span>
+          </td>
+          <td class="py-3 px-4 text-center whitespace-nowrap">
+            <div class="inline-flex items-center gap-1">
+              <button onclick="viewReceipt('${item.id}')" title="Lihat Struk / Detail" class="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-orange-100 rounded-lg transition">
+                <i class="fa-solid fa-receipt"></i>
+              </button>
+              <button onclick="openModalForm('${item.id}')" title="Edit Data" class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                <i class="fa-regular fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteRecord('${item.id}')" title="Hapus Data" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('tableInfoText').innerText = `Menampilkan ${filtered.length} dari total ${salaryEntries.length} data`;
+      document.getElementById('tableFilteredTotalGaji').innerText = formatRupiah(filteredGaji);
+      document.getElementById('tableFilteredTotalTabung').innerText = formatRupiah(filteredTabung);
+    }
+
+    function resetFilter() {
+      document.getElementById('searchKeyword').value = '';
+      document.getElementById('filterBulan').value = '';
+      renderTable();
+    }
+
+    // Export Data JSON
+    function exportDataJSON() {
+      if (salaryEntries.length === 0) {
+        showToast('Belum ada data untuk diekspor!', 'error');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(salaryEntries, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `Simpan_Tabung_Gaji_Backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Cadangan data berhasil diunduh!');
+    }
+
+    // Import Data JSON
+    function importDataJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            salaryEntries = imported;
+            saveData();
+            renderStats();
+            renderCharts();
+            renderTable();
+            showToast(`Berhasil memulihkan ${imported.length} data gaji!`);
+          } else {
+            showToast('Format file JSON tidak sesuai.', 'error');
+          }
+        } catch (err) {
+          showToast('Gagal membaca file JSON.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // Toast Notification helper
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = message;
+      if (type === 'error') {
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-base';
+      } else {
+        toastIcon.className = 'fa-solid fa-circle-check text-brand-400 text-base';
+      }
+
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
